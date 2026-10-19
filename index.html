@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#12040a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Uma pergunta pra você 🥀</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,500;1,700&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#d4af37;--rose:#c98a9b;--cream:#f5e6d3;box-sizing:border-box}
+*{-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0;overscroll-behavior:none;touch-action:manipulation}
+body{
+  height:100vh;height:100dvh; /* acompanha a barra do navegador no celular */
+  background:radial-gradient(ellipse at 50% 0%,#2d0a16 0%,#12040a 55%,#070103 100%);
+  color:var(--cream);
+  font-family:"Cormorant Garamond",Georgia,"Times New Roman",serif;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:2;
+  background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.75) 100%)}
+.petals{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+.petal{position:absolute;top:-5vh;background:linear-gradient(135deg,#be123c,#4c0519);
+  border-radius:150% 0 150% 0;opacity:0;animation:fall linear infinite;will-change:transform}
+@keyframes fall{
+  0%{transform:translate3d(0,-10vh,0) rotate(0);opacity:0}
+  10%{opacity:.75}90%{opacity:.6}
+  100%{transform:translate3d(var(--dx),110vh,0) rotate(540deg);opacity:0}
+}
+.card{
+  position:relative;z-index:1;box-sizing:border-box;
+  background:rgba(22,6,12,.82); /* sem blur: mais leve no celular */
+  border:1px solid rgba(212,175,55,.4);border-radius:8px;
+  padding:clamp(24px,6vh,40px) clamp(18px,6vw,28px);
+  width:min(440px,calc(100% - 32px));text-align:center;
+  box-shadow:0 0 50px rgba(159,18,57,.35),inset 0 0 30px rgba(212,175,55,.06);
+}
+.card::before{content:"";position:absolute;inset:7px;border:1px solid rgba(212,175,55,.18);border-radius:4px;pointer-events:none}
+.emoji{font-size:clamp(44px,12vw,58px);line-height:1;filter:drop-shadow(0 0 14px rgba(190,18,60,.8))}
+h1{font-size:clamp(26px,8vw,34px);font-style:italic;font-weight:700;margin:16px 0 10px;line-height:1.2;
+  text-shadow:0 0 18px rgba(190,18,60,.5);overflow-wrap:break-word}
+p{color:var(--rose);margin:0 0 24px;font-size:clamp(17px,4.6vw,20px);font-style:italic;letter-spacing:.03em}
+.row{display:flex;gap:14px;justify-content:center;align-items:center;min-height:76px}
+button{
+  font-family:inherit;font-size:clamp(19px,5.2vw,22px);font-weight:700;letter-spacing:.05em;
+  border-radius:4px;padding:15px 28px;min-height:52px;min-width:104px;cursor:pointer;
+  touch-action:manipulation;-webkit-appearance:none;appearance:none;
+}
+#sim{background:linear-gradient(180deg,#be123c,#7f1d1d);color:var(--cream);
+  border:1px solid var(--gold);transition:transform .15s;animation:pulso 2.4s ease-in-out infinite}
+@keyframes pulso{0%,100%{box-shadow:0 0 10px rgba(190,18,60,.5)}50%{box-shadow:0 0 26px rgba(225,29,72,.9)}}
+#nao{background:rgba(22,6,12,.9);color:var(--rose);border:1px solid rgba(201,138,155,.5);
+  transition:left .16s ease,top .16s ease}
+#nao.foge{position:fixed;z-index:10}
+.hidden{display:none}
+#final .emoji{font-size:clamp(60px,18vw,80px)}
+@media (max-height:520px){.card{padding:16px}.emoji{display:none}p{margin-bottom:12px}.row{min-height:60px}}
+@media (prefers-reduced-motion:reduce){.petal,#sim{animation:none}}
+</style>
+</head>
+<body>
+<div class="petals" id="petals"></div>
+
+<div class="card" id="pergunta">
+  <div class="emoji">🥀</div>
+  <h1 id="titulo"></h1>
+  <p id="sub"></p>
+  <div class="row">
+    <button id="sim">Sim 🖤</button>
+    <button id="nao">Não</button>
+  </div>
+</div>
+
+<div class="card hidden" id="final">
+  <div class="emoji">🖤</div>
+  <h1 id="resp"></h1>
+  <p id="resp2"></p>
+</div>
+
+<script>
+// ✏️ Edite os textos aqui:
+var CONFIG = {
+  pergunta: "Me da esse teu cuzin hoje ?",
+  sub: "Sem pressa… mas também sem fuga.",
+  respostaSim: "Eu sabia que você não resistiria.",
+  respostaSim2: "Que a noite comece… 🥀",
+  mensagensNao: ["Não", "Tem certeza?", "Você sabe que quer…", "Tente outra vez", "Impossível", "Nem tente", "Resista se for capaz"]
+};
+
+var sim = document.getElementById("sim"), nao = document.getElementById("nao");
+var tentativas = 0, escala = 1;
+document.getElementById("titulo").textContent = CONFIG.pergunta;
+document.getElementById("sub").textContent = CONFIG.sub;
+
+// pétalas (menos no celular pra não pesar)
+var petals = document.getElementById("petals");
+var qtd = window.innerWidth < 600 ? 10 : 18;
+for (var i = 0; i < qtd; i++) {
+  var p = document.createElement("span");
+  var s = 8 + Math.random() * 10;
+  p.className = "petal";
+  p.style.width = s + "px";
+  p.style.height = s * 1.3 + "px";
+  p.style.left = Math.random() * 100 + "%";
+  p.style.setProperty("--dx", (Math.random() * 120 - 60) + "px");
+  p.style.animationDuration = 9 + Math.random() * 9 + "s";
+  p.style.animationDelay = -Math.random() * 15 + "s";
+  petals.appendChild(p);
+}
+
+function foge(e){
+  if (e && e.cancelable) e.preventDefault();
+  tentativas++;
+  nao.classList.add("foge");
+  nao.textContent = CONFIG.mensagensNao[tentativas % CONFIG.mensagensNao.length];
+
+  var vw = window.innerWidth, vh = window.innerHeight;
+  var mx = 14, mTop = 20, mBottom = 40; // folga extra embaixo (barra do iPhone)
+  var w = nao.offsetWidth, h = nao.offsetHeight;
+  var minX = mx, maxX = Math.max(minX, vw - w - mx);
+  var minY = mTop, maxY = Math.max(minY, vh - h - mBottom);
+
+  var r = sim.getBoundingClientRect(), x, y, tries = 0;
+  do {
+    x = minX + Math.random() * (maxX - minX);
+    y = minY + Math.random() * (maxY - minY);
+    tries++;
+  } while (tries < 25 && x < r.right + 16 && x + w > r.left - 16 && y < r.bottom + 16 && y + h > r.top - 16);
+
+  nao.style.left = x + "px";
+  nao.style.top = y + "px";
+
+  escala = Math.min(escala + 0.07, 1.5);
+  sim.style.transform = "scale(" + escala + ")";
+}
+
+// touchstart = toque no celular | pointer/mouse = computador
+nao.addEventListener("touchstart", foge, {passive:false});
+nao.addEventListener("pointerdown", foge);
+nao.addEventListener("mouseover", foge);
+nao.addEventListener("click", foge);
+nao.addEventListener("focus", foge);
+
+// no computador, foge antes mesmo de chegar perto
+document.addEventListener("mousemove", function(e){
+  if (!nao.classList.contains("foge")) return;
+  var b = nao.getBoundingClientRect();
+  if (Math.hypot(e.clientX - (b.left + b.width/2), e.clientY - (b.top + b.height/2)) < 70) foge();
+});
+
+// se girar a tela, reposiciona o botão dentro da área visível
+window.addEventListener("resize", function(){
+  if (nao.classList.contains("foge")) foge();
+});
+
+sim.addEventListener("click", function(){
+  document.getElementById("pergunta").classList.add("hidden");
+  nao.classList.add("hidden");
+  document.getElementById("resp").textContent = CONFIG.respostaSim;
+  document.getElementById("resp2").textContent = CONFIG.respostaSim2;
+  document.getElementById("final").classList.remove("hidden");
+  if (navigator.vibrate) navigator.vibrate([80, 60, 80]); // vibrinha no Android
+});
+</script>
+</body>
+</html>
