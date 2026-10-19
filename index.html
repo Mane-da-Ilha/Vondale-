@@ -15,7 +15,7 @@
 *{-webkit-tap-highlight-color:transparent}
 html,body{height:100%;margin:0;overscroll-behavior:none;touch-action:manipulation}
 body{
-  height:100vh;height:100dvh; /* acompanha a barra do navegador no celular */
+  height:100vh;height:100dvh;
   background:radial-gradient(ellipse at 50% 0%,#2d0a16 0%,#12040a 55%,#070103 100%);
   color:var(--cream);
   font-family:"Cormorant Garamond",Georgia,"Times New Roman",serif;
@@ -35,7 +35,7 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:2;
 }
 .card{
   position:relative;z-index:1;box-sizing:border-box;
-  background:rgba(22,6,12,.82); /* sem blur: mais leve no celular */
+  background:rgba(22,6,12,.82);
   border:1px solid rgba(212,175,55,.4);border-radius:8px;
   padding:clamp(24px,6vh,40px) clamp(18px,6vw,28px);
   width:min(440px,calc(100% - 32px));text-align:center;
@@ -86,17 +86,38 @@ button{
 <script>
 // ✏️ Edite os textos aqui:
 var CONFIG = {
-  pergunta: "Me da esse teu cuzin hoje ?",
+  pergunta: "VOCE ACEITA DAR O CUZIN HOJE ?",
   sub: "Sem pressa… mas também sem fuga.",
   respostaSim: "Eu sabia que você não resistiria.",
   respostaSim2: "Que a noite comece… 🥀",
   mensagensNao: ["Não", "Tem certeza?", "Você sabe que quer…", "Tente outra vez", "Impossível", "Nem tente", "Resista se for capaz"]
 };
 
+// 🔔 Nome do canal de notificação (já pronto, não precisa mexer)
+var NTFY_TOPIC = "amor-sim-k9x2m7q4";
+
 var sim = document.getElementById("sim"), nao = document.getElementById("nao");
 var tentativas = 0, escala = 1;
 document.getElementById("titulo").textContent = CONFIG.pergunta;
 document.getElementById("sub").textContent = CONFIG.sub;
+
+// 🔔 Envia o aviso quando ela clica em Sim
+function notificar() {
+  try {
+    fetch("https://ntfy.sh", {
+      method: "POST",
+      keepalive: true,
+      body: JSON.stringify({
+        topic: NTFY_TOPIC,
+        title: "Ela disse SIM! 🔥",
+        message: "Ela clicou em Sim às " + new Date().toLocaleTimeString("pt-BR") +
+                 " (tentou fugir do Não " + tentativas + " vezes)",
+        priority: 4,
+        tags: ["heart", "tada"]
+      })
+    }).catch(function(){});
+  } catch (e) {}
+}
 
 // pétalas (menos no celular pra não pesar)
 var petals = document.getElementById("petals");
@@ -121,7 +142,7 @@ function foge(e){
   nao.textContent = CONFIG.mensagensNao[tentativas % CONFIG.mensagensNao.length];
 
   var vw = window.innerWidth, vh = window.innerHeight;
-  var mx = 14, mTop = 20, mBottom = 40; // folga extra embaixo (barra do iPhone)
+  var mx = 14, mTop = 20, mBottom = 40;
   var w = nao.offsetWidth, h = nao.offsetHeight;
   var minX = mx, maxX = Math.max(minX, vw - w - mx);
   var minY = mTop, maxY = Math.max(minY, vh - h - mBottom);
@@ -140,32 +161,30 @@ function foge(e){
   sim.style.transform = "scale(" + escala + ")";
 }
 
-// touchstart = toque no celular | pointer/mouse = computador
 nao.addEventListener("touchstart", foge, {passive:false});
 nao.addEventListener("pointerdown", foge);
 nao.addEventListener("mouseover", foge);
 nao.addEventListener("click", foge);
 nao.addEventListener("focus", foge);
 
-// no computador, foge antes mesmo de chegar perto
 document.addEventListener("mousemove", function(e){
   if (!nao.classList.contains("foge")) return;
   var b = nao.getBoundingClientRect();
   if (Math.hypot(e.clientX - (b.left + b.width/2), e.clientY - (b.top + b.height/2)) < 70) foge();
 });
 
-// se girar a tela, reposiciona o botão dentro da área visível
 window.addEventListener("resize", function(){
   if (nao.classList.contains("foge")) foge();
 });
 
 sim.addEventListener("click", function(){
+  notificar();
   document.getElementById("pergunta").classList.add("hidden");
   nao.classList.add("hidden");
   document.getElementById("resp").textContent = CONFIG.respostaSim;
   document.getElementById("resp2").textContent = CONFIG.respostaSim2;
   document.getElementById("final").classList.remove("hidden");
-  if (navigator.vibrate) navigator.vibrate([80, 60, 80]); // vibrinha no Android
+  if (navigator.vibrate) navigator.vibrate([80, 60, 80]);
 });
 </script>
 </body>
